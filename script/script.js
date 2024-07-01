@@ -96,8 +96,8 @@ function change() {
 function startup(){
     for (let i = 1; i <= 5; i++) {
         for (let j = 0; j < i; j++) {
-            box[j].style.left = 50 * j + "px";
-            box[j].style.top = 50 * j + "px";
+            box[j].style.left = 17 * j + "px";
+            box[j].style.top = 17 * j + "px";
         }
     }
     setInterval(change, 1);
