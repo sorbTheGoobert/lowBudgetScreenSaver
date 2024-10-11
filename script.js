@@ -11,16 +11,27 @@ function randomizeColor() {
   return [r, g, b];
 }
 
+function xor(x, y) {
+  return !(x && y) && (x || y);
+}
+
 class Bouncer {
   constructor(length, speed, size, initPos) {
     this.SPEED = speed;
     this.BOX_SIZE = size;
+    this.container = document.createElement("div");
+    this.container.style.position = "absolute";
+    this.container.style.left = "0px"
+    this.container.style.top = "0px"
+    document.body.appendChild(this.container);
 
     this.head = new Head(
       initPos,
       randomizeColor(),
       [this.SPEED, this.SPEED],
-      this.BOX_SIZE
+      this.BOX_SIZE,
+      length,
+      this.container
     );
     this.box = [];
     const stepSize = 0.9 / (length - 1);
@@ -32,7 +43,9 @@ class Bouncer {
           randomizeColor(),
           [this.SPEED, this.SPEED],
           this.BOX_SIZE,
-          opacity
+          opacity,
+          length - 1 - i,
+          this.container
         )
       );
       opacity -= stepSize;
@@ -50,7 +63,7 @@ class Bouncer {
 }
 
 class Head {
-  constructor(pos, color, speed, BOX_SIZE) {
+  constructor(pos, color, speed, BOX_SIZE, index, parent) {
     this.pos = [...pos];
     this.color = [...color];
     this.speed = [...speed];
@@ -62,41 +75,57 @@ class Head {
     this.div.style.height = `${this.size}px`;
     this.div.style.left = `${this.pos[0]}px`;
     this.div.style.top = `${this.pos[1]}px`;
-    document.body.appendChild(this.div);
+    this.div.style.zIndex = index;
+    parent.appendChild(this.div);
+
+    this.stuck = [false, false];
   }
   update = (width, height) => {
     this.pos[0] += this.speed[0];
-    if (this.pos[0] < 0) {
+    if (this.pos[0] < 0 && !this.stuck[0]) {
       this.pos[0] -= this.speed[0];
-      this.speed[0] *= -1;
+      this.speed[0] = this.speed[0] < 0 ? -this.speed[0] : this.speed[0];
+
+      // Inconsistent but could try
+      // this.speed[0] *= -1;
       this.color = [...randomizeColor()];
-    }
-    if (this.pos[0] + this.size > width) {
+    } else if (this.pos[0] + this.size > width && !this.stuck[0]) {
       this.pos[0] -= this.speed[0];
-      this.speed[0] *= -1;
+      this.speed[0] = this.speed[0] > 0 ? -this.speed[0] : this.speed[0];
+
+      // Inconsistent but could try
+      // this.speed[0] *= -1;
       this.color = [...randomizeColor()];
     }
 
     this.pos[1] += this.speed[1];
-    if (this.pos[1] < 0) {
+    if (this.pos[1] < 0 && !this.stuck[1]) {
       this.pos[1] -= this.speed[1];
-      this.speed[1] *= -1;
+      this.speed[1] = this.speed[1] < 0 ? -this.speed[1] : this.speed[1];
       this.color = [...randomizeColor()];
-    }
-    if (this.pos[1] + this.size > height) {
+
+      // Inconsistent but could try
+      // this.speed[1] *= -1;
+    } else if (this.pos[1] + this.size > height && !this.stuck[1]) {
       this.pos[1] -= this.speed[1];
-      this.speed[1] *= -1;
+      this.speed[1] = this.speed[1] > 0 ? -this.speed[1] : this.speed[1];
       this.color = [...randomizeColor()];
+
+      // Inconsistent but could try
+      // this.speed[1] *= -1;
     }
 
     this.div.style.left = `${this.pos[0]}px`;
     this.div.style.top = `${this.pos[1]}px`;
     this.div.style.backgroundColor = `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
+
+    this.stuck[0] = xor(this.pos[0] < 0, this.pos[0] + this.size > width);
+    this.stuck[1] = xor(this.pos[1] < 0, this.pos[1] + this.size > height);
   };
 }
 
 class Box {
-  constructor(pos, color, speed, BOX_SIZE, opac) {
+  constructor(pos, color, speed, BOX_SIZE, opac, index, parent) {
     this.pos = [...pos];
     this.color = [...color];
     this.speed = [...speed];
@@ -109,7 +138,8 @@ class Box {
     this.div.style.height = `${this.size}px`;
     this.div.style.left = `${this.pos[0]}px`;
     this.div.style.top = `${this.pos[1]}px`;
-    document.body.appendChild(this.div);
+    this.div.style.zIndex = index;
+    parent.appendChild(this.div);
   }
   update = (pos, color) => {
     this.pos = [...pos];
@@ -145,19 +175,9 @@ function randomLocationOnScreen(size) {
   ];
 }
 window.onload = init([
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
-  [10, 5, 50, randomLocationOnScreen(50)],
+  // [2, 10, 500, randomLocationOnScreen(500)],
+  [10, 10, 50, randomLocationOnScreen(50)],
+  [10, 10, 50, randomLocationOnScreen(50)],
+  [10, 10, 50, randomLocationOnScreen(50)],
+  [10, 10, 50, randomLocationOnScreen(50)],
 ]);
