@@ -188,8 +188,8 @@ function randomLocationOnScreen(size) {
 }
 window.onload = init([
   // [2, 10, 500, randomLocationOnScreen(500)],
-  [2, 10, 100, randomLocationOnScreen(50)],
-  [2, 10, 100, randomLocationOnScreen(50)],
-  [2, 10, 100, randomLocationOnScreen(50)],
-  [2, 10, 100, randomLocationOnScreen(50)],
+  [1, 10, 100, randomLocationOnScreen(50)],
+  [1, 10, 100, randomLocationOnScreen(50)],
+  [1, 10, 100, randomLocationOnScreen(50)],
+  [1, 10, 100, randomLocationOnScreen(50)],
 ]);
