@@ -11,10 +11,14 @@ function randomizeColor() {
   return [r, g, b];
 }
 
+function pythagroean(x, y) {
+  return Math.sqrt(x * x + y * y);
+}
+
 function randomLocationOnScreen(w, h, s) {
   return [
-    Math.floor(Math.random() * (w - s)),
-    Math.floor(Math.random() * (h - s)),
+    Math.floor(Math.random() * (w - s)) + s / 2,
+    Math.floor(Math.random() * (h - s)) + s / 2,
   ];
 }
 
@@ -35,7 +39,8 @@ class BouncerContainer {
     }
   }
   init = () => {
-    setInterval(this.update, 1000 / 10);
+    // setInterval(this.update, 1);
+    setInterval(this.update, 1000 / 60);
   }
   update = () => {
     this.Bouncers.forEach((element) => {
@@ -50,6 +55,8 @@ class Bouncer {
 
     this.SPEED = props.v;
     this.BOX_SIZE = props.s;
+    this.TRAIL_SIZE = props.t;
+    this.TRAIL_SIZE = Math.min(this.TRAIL_SIZE, 1);
     this.offset = props.o
     this.container = document.createElement("div");
     this.container.style.position = "absolute";
@@ -59,14 +66,14 @@ class Bouncer {
     this.parent.appendChild(this.container);
 
     this.head = new Head(
-      { i: props.i, c: randomizeColor(), v: [this.SPEED, this.SPEED], s: this.BOX_SIZE, z: props.l, p: this.container },
+      { i: props.i, c: randomizeColor(), v: [this.SPEED, this.SPEED], s: this.BOX_SIZE, z: props.l, p: this.container, o: this.offset },
     );
 
     this.box = [];
     const opacStep = 0.9 / (props.l);
-    let opacity = 1 - opacStep;
-    const sizeStep = this.BOX_SIZE / (props.l);
-    let curSize = this.BOX_SIZE;
+    let opacity = 0.9;
+    const sizeStep = (this.BOX_SIZE * this.TRAIL_SIZE) / (props.l);
+    let curSize = this.BOX_SIZE * this.TRAIL_SIZE;
     for (let i = 0; i < props.l; i++) {
       this.box.push(
         new Box(
@@ -82,9 +89,9 @@ class Bouncer {
     const height = this.parent.offsetHeight;
     if (this.box.length > 0) {
       for (let i = this.box.length - 1; i > 0; i--) {
-        this.box[i].update(this.box[i - 1].pos, this.box[i - 1].color);
+        this.box[i].update(this.box[i - 1].pos, this.box[i - 1].color, this.head.stepCounter);
       }
-      this.box[0].update(this.head.pos, this.head.color);
+      this.box[0].update(this.head.pos, this.head.color, this.head.stepCounter);
     }
     this.head.update(width, height);
   };
@@ -97,6 +104,7 @@ class Head {
     this.color = [...props.c];
     this.speed = [...props.v];
     this.size = props.s;
+    this.offset = props.o;
 
     this.div = document.createElement("div");
     this.div.style.backgroundColor = `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
@@ -108,8 +116,14 @@ class Head {
     props.p.appendChild(this.div);
 
     this.stuck = [false, false];
+    this.stepCounter = 0;
   }
   update = (width, height) => {
+
+    if (this.stepCounter > this.offset) {
+      this.stepCounter %= this.offset;
+    }
+
     this.pos[0] += this.speed[0];
     if (this.pos[0] - this.size / 2 < 0 && !this.stuck[0]) {
       this.pos[0] -= this.speed[0];
@@ -144,6 +158,8 @@ class Head {
       // this.speed[1] *= -1;
     }
 
+    this.stepCounter += pythagroean(this.speed[0], this.speed[1]);
+
     this.div.style.left = `${this.pos[0] - this.size / 2}px`;
     this.div.style.top = `${this.pos[1] - this.size / 2}px`;
     this.div.style.backgroundColor = `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
@@ -177,30 +193,18 @@ class Box {
     this.div.style.zIndex = props.z;
     props.p.appendChild(this.div);
   }
-  update = (pos, color) => {
+  update = (pos, color, step) => {
     const delta = [
       this.pos[0] - pos[0],
       this.pos[1] - pos[1]
     ];
-    // if (
-    //   Math.abs(delta[0]) > this.offset ||
-    //   Math.abs(delta[1]) > this.offset
-    // ) {
-    //   this.pos = [...pos];
-    //   // this.pos[0] += Math.sign(delta[0]) * this.offset;
-    //   // this.pos[1] += Math.sign(delta[1]) * this.offset;
-    //   // this.pos[0] = pos[0]
-    //   // this.pos[0] += Math.sign(delta[0]) * this.offset;
-    // }
-    // if (
-    //   Math.abs(delta[1]) > this.offset
-    // ) {
-    //   // this.pos[1] = pos[1]
-    //   // this.pos[1] += Math.sign(delta[1]) * this.offset;
-    // }
-    this.pos = [...pos];
-    // this.pos[0] += Math.sign(delta[0]) * this.offset;
-    // this.pos[1] += Math.sign(delta[1]) * this.offset;
+
+    if (
+      step > this.offset
+    ) {
+      this.pos = [...pos];
+    }
+
     this.color = [...color];
     this.div.style.left = `${this.pos[0] - this.size / 2}px`;
     this.div.style.top = `${this.pos[1] - this.size / 2}px`;
@@ -208,16 +212,25 @@ class Box {
   };
 }
 
+const WIDTH = 100;
+const HEIGHT = 100;
+const SIZE = 50;
+const VEL = 10;
+const LEN = 100;
+const OFF = 20;
+const S_OFF = 0.6;
+
 const Main = new BouncerContainer({
-  w: 800,
-  h: 600,
+  w: WIDTH,
+  h: HEIGHT,
   b: [
     {
-      l: 5,
-      v: 50,
-      s: 50,
-      i: randomLocationOnScreen(800, 600, 20),
-      o: 10
+      l: LEN,
+      v: VEL,
+      s: SIZE,
+      i: randomLocationOnScreen(WIDTH, HEIGHT, SIZE),
+      o: OFF,
+      t: S_OFF,
     },
   ],
   p: document.getElementById("bonka"),
